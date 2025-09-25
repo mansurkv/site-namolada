@@ -264,7 +264,7 @@ Amor da sua Vida 💌</div>
       setTimeout(()=>layer.remove(),1600);
     }
 
-    const musicBtn = $('#musicBtn'); const bgm = $('#bgm'); let playing=false;
+    const musicBtn = $('#musicBtn'); bgm.volume = 0.5; const bgm = $('#bgm'); let playing=false;
     if(musicBtn){ musicBtn.addEventListener('click', async()=>{
       try{
         if(!playing){ await bgm.play(); musicBtn.textContent='⏸️ Pausar música'; playing=true; }
