@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Para Minha Namorada 💛</title>
+  <meta name="description" content="Um site fofo com perguntinhas e mini jogos" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>💛</text></svg>">
+  <style>
+    :root{ --bg:#fffbea; --card:#fffdf5; --ink:#3a2c00; --accent:#ffbf00; --soft:#fff2b2; --ok:#43b581; --warn:#ff7a59; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:radial-gradient(60vw 60vw at 10% 10%, var(--soft), transparent), radial-gradient(60vw 60vw at 90% 10%, #fff8d0, transparent), var(--bg);color:var(--ink);position:relative;min-height:100dvh}
+    header{padding:32px 16px;text-align:center;position:relative}
+    h1{font-size:clamp(28px,5vw,44px);margin:8px 0;color:#d48b00}
+    p.lead{max-width:700px;margin:8px auto 0;opacity:.9}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+    .card{background:var(--card);border:1px solid #ffe08a;border-radius:18px;padding:18px;box-shadow:0 10px 24px rgba(255,191,0,.2)}
+    .card h2{margin-top:2px;color:#d48b00}
+    button{appearance:none;border:none;background:var(--accent);color:#fff;padding:14px 18px;border-radius:14px;font-weight:700;cursor:pointer;transition:.2s;box-shadow:0 6px 14px rgba(255,191,0,.3)}
+    button:active{transform:scale(.98)}
+    button:hover{transform:translateY(-1px)}
+    .muted{opacity:.8}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .tag{background:var(--soft);border:1px solid #ffe08a;padding:6px 10px;border-radius:999px;font-weight:600}
+    .footer{padding:32px 16px;text-align:center;color:#7b5e73;position:relative}
+    .hidden{display:none}
+    .center{text-align:center}
+    .heart{color:#ffbf00}
+    .yesno{display:flex;gap:10px;justify-content:center;margin-top:10px}
+    .no-escape{position:relative}
+    #confetti{position:fixed;inset:0;pointer-events:none}
+    .progress{height:10px;background:#fff2b2;border-radius:999px;overflow:hidden}
+    .bar{height:100%;width:0;background:linear-gradient(90deg,#ffbf00,#ffe66d)}
+    .memory{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+    .tile{aspect-ratio:1;background:#fff8d0;border:2px solid #ffe08a;border-radius:10px;font-size:22px;display:grid;place-items:center;cursor:pointer;user-select:none}
+    .tile.revealed{background:#fff;border-color:#ffbf00}
+    .small{font-size:12px}
+    .input{padding:12px 14px;border:1px solid #ffe08a;border-radius:12px;width:100%}
+
+    /* --- TELA DE ENTRADA (GATE) --- */
+    .intro-screen{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:radial-gradient(80vw 80vw at 50% -10%, #fff3a6, transparent), var(--bg); z-index:10}
+    .intro-inner{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:24px;position:relative;width:100%;height:100%;justify-content:center}
+    .intro-title{font-size:clamp(26px,6vw,48px);color:#d48b00;margin:0}
+    .intro-note{opacity:.85;max-width:560px}
+    .intro-start{font-size:clamp(16px,3.5vw,22px);padding:14px 22px;border-radius:999px;margin-top:12px}
+    .fade-out{animation:fadeOut .6s ease forwards}
+    @keyframes fadeOut{to{opacity:0;transform:scale(.98)} }
+
+    /* Esconde conteúdo até iniciar */
+    body:not(.started) header, body:not(.started) main, body:not(.started) footer{display:none}
+
+    /* Modal fullscreen genérico */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
+    .modal.open{display:flex}
+    .modal-card{background:#fffdf5;max-width:min(720px,95vw);max-height:85vh;border-radius:16px;overflow:auto;border:1px solid #ffe08a;box-shadow:0 20px 60px rgba(0,0,0,.2);padding:16px}
+    .modal .close{position:sticky;top:0;display:block;margin-left:auto;background:#222;color:#fff;border-radius:10px;padding:6px 10px}
+
+    /* Caça-palavras */
+    .ws{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
+    .ws .cell{aspect-ratio:1;display:grid;place-items:center;border:1px solid #ffe08a;background:#fff8d0;border-radius:8px;font-weight:800}
+    .ws .sel{background:#ffe66d}
+    .ws .found{background:#b7f7c4}
+    .ws-words{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .ws-words span{background:#fff2b2;border:1px solid #ffe08a;padding:6px 10px;border-radius:999px;font-weight:700}
+
+    /* Galeria */
+    .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .gallery img{width:100%;border-radius:12px;border:2px solid #ffe08a}
+
+    /* Música */
+    .music-btn{position:static; margin-left:8px}
+
+    /* Toast */
+    .toast{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 14px;border-radius:10px;opacity:0;pointer-events:none;transition:.3s;z-index:50}
+    .toast.show{opacity:1}
+      /* --- LOCK (cadeado) para jogos/quizzes até tocar em "Começar!" --- */
+    .locked{position:relative;}
+    .locked > *{filter:blur(1px) grayscale(.1)}
+    .locked *{pointer-events:none}
+    .locked::after{content:'🔒  Bloqueado — toque “Começar!”'; position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:16px; color:#7b5e00; font-weight:800; background:linear-gradient(rgba(255,255,255,.85), rgba(255,255,255,.85)); border-radius:18px}
+    /* botão Não: explosão */
+  #btnNo.explode{animation:kaboom .6s ease-out forwards}
+  @keyframes kaboom{0%{transform:scale(1);opacity:1}100%{transform:scale(2.2) rotate(12deg);opacity:0}}
+  /* limite e área de movimento do primeiro jogo */
+  #card-ask{position:relative;min-height:220px}
+    @media (max-width: 380px){
+    .memory{gap:5px}
+    .tile{font-size:20px;border-radius:10px}
+  }
+    /* Estrela dourada premium */
+  .star-layer{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:9999}
+  .star{font-size:100px;animation:spinGlow 1.3s ease-out forwards;text-shadow:0 0 16px gold,0 0 32px orange,0 0 48px yellow}
+  @keyframes spinGlow{0%{transform:scale(0) rotate(0deg);opacity:0}40%{transform:scale(1.25) rotate(180deg);opacity:1}70%{transform:scale(1) rotate(300deg);opacity:1}100%{transform:scale(0.85) rotate(360deg);opacity:0}}40%{transform:scale(1.3) rotate(180deg);opacity:1}70%{transform:scale(1) rotate(300deg)}100%{transform:scale(.4) rotate(360deg);opacity:.9;position:absolute;top:12px;right:12px;font-size:30px}}
+  </style>
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+
+  <!-- Música -->
+  <audio id="bgm" src="musica.mp3" preload="none" loop></audio>
+  
+
+  <!-- TELA DE ENTRADA: só o botão Iniciar -->
+  <section class="intro-screen" id="intro">
+    <div class="intro-inner">
+      <h1 class="intro-title">Um site só pra você 💛</h1>
+      <p class="intro-note">Clique em <strong>Iniciar</strong> para desbloquear as perguntinhas, o quiz e as surpresas. ✨</p>
+      <button id="gateStart" class="intro-start">Iniciar</button>
+    </div>
+  </section>
+
+  <header>
+    <div class="row center" style="justify-content:center">
+      <span class="tag">Feito com 💛 por <span id="yourName">Matheus Amoroso</span></span>
+      <span class="tag">Para <span id="herName">Sarah Roberto</span></span>
+      <span class="tag" id="daysTogether">0 dias juntos</span>
+    </div>
+    <h1 id="title">Oi, meu amor! Pronta para um joguinho? 🥰</h1>
+    <p class="lead">Preparei um cantinho fofo com perguntinhas, um quiz sobre nós e um jogo da memória. No final tem uma surpresinha. ✨</p>
+    <div class="center" style="margin-top:12px;display:flex;gap:8px;justify-content:center">
+      <button id="btnStart">Começar!</button>
+      <button class="music-btn hidden" id="musicBtn">▶️ Nossa música</button>
+    </div>
+  </header>
+
+  
+
+  <main class="wrap">
+    <div class="grid">
+      <!-- 1. Te amo / Perguntinha -->
+      <section class="card locked" id="card-ask">
+        <h2>Primeiro: você me ama? 😏</h2>
+        <p class="muted">Responda com sinceridade, hein…</p>
+        <div class="yesno">
+          <button id="btnYes">Sim, muito! 💘</button>
+          <button id="btnNo" class="no-escape">Não 🙈</button>
+        </div>
+        <p id="askResult" class="center" style="margin-top:10px;font-weight:700"></p>
+      </section>
+
+      <!-- 2. Quiz -->
+      <section class="card locked" id="card-quiz">
+        <h2>Quiz: O quanto você me conhece? 💭</h2>
+        <div class="progress" aria-label="progresso do quiz"><div class="bar" id="quizBar"></div></div>
+        <p id="quizQ" style="min-height:48px;margin-top:10px"></p>
+        <div id="quizOps" class="row"></div>
+        <p id="quizMsg" class="muted"></p>
+        <button id="revealBtn" class="hidden" style="margin-top:8px">Revelação Surpresa!! 🎁</button>
+      </section>
+
+      <!-- 3. Memória -->
+      <section class="card locked" id="card-mem">
+        <h2>Jogo da memória de emojis 🧠</h2>
+        <p class="muted small">Encontre os pares! Tempo é amor… ⏱️💗</p>
+        <div id="memGrid" class="memory" aria-live="polite"></div>
+        <div class="row" style="margin-top:10px;justify-content:space-between">
+          <span id="memMoves" class="muted">Movimentos: 0</span>
+          <button id="memReset">Reiniciar</button>
+        </div>
+      </section>
+
+      <!-- 4. Caça-palavras -->
+      <section class="card locked" id="card-wordsearch">
+        <h2>Caça-palavras do amor 🔎💛</h2>
+        <div id="wsGrid" class="ws" aria-label="caça-palavras"></div>
+        <div class="ws-words" id="wsWords"></div>
+        <p class="muted small">Dica: arraste o dedo em linha reta (horizontal/vertical) para selecionar.</p>
+      </section>
+
+      <!-- 5. Contagem regressiva / nosso dia -->
+      <section class="card" id="card-count">
+        <h2>Falta pouco para <span id="countTitle">nosso dia</span> ⏳</h2>
+        <p id="countDown" style="font-weight:800;font-size:20px">—</p>
+      </section>
+
+      <!-- 6. Cartinha (última opção) -->
+      <section class="card locked" id="card-letter">
+        <h2>Cartinha para você ✉️</h2>
+        <div id="letter" style="white-space:pre-wrap; padding:12px 14px; border:1px solid #ffe08a; border-radius:12px; background:#fffdf5;">Oi, meu amor! 💛
+
+Você é a melhor parte dos meus dias, meu motivo de sorrir à toa e a dona dos abraços mais gostosos do mundo. 🌍💞
+
+Prometo sempre te arrancar risadas (mesmo com minhas piadinhas ruins 🤡), dividir minhas batatinhas (quase sempre 🍟) e te lembrar todos os dias o quanto eu te amo.
+
+Você é meu lugar favorito, minha aventura preferida e a certeza mais bonita que já tive.
+
+Com todo o meu amor,
+Amor da sua Vida 💌</div>
+        <div class="row" style="margin-top:10px">
+          <button id="btnCopy">Copiar cartinha ✂️</button>
+          <button id="btnFullscreen">Abrir em tela cheia 🪄</button>
+          <button id="btnCelebrate">Surpresa 🎉</button>
+        </div>
+        <p id="copyMsg" class="muted"></p>
+      </section>
+
+      <!-- Galeria escondida -->
+      <section class="card hidden" id="card-gallery">
+        <h2>Nossas fotos 💛</h2>
+        <div class="gallery">
+          <img src="foto1.jpg" alt="nós 1">
+          <img src="foto2.jpg" alt="nós 2">
+          <img src="foto3.jpg" alt="nós 3">
+          <img src="foto4.jpg" alt="nós 4">
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    Feito com <span class="heart">❤</span> — <span id="footerNames">por Matheus Amoroso para Sarah Roberto</span>
+  </footer>
+
+  <section class="modal" id="modalLetter" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button class="close" id="closeLetter">Fechar ✖</button>
+      <h3>Cartinha 💌</h3>
+      <p id="letterFull" style="white-space:pre-wrap"></p>
+    </div>
+  </section>
+
+  <section class="modal" id="modalReveal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button class="close" id="closeReveal">Fechar ✖</button>
+      <h3>Surpresa 🎁</h3>
+      <img id="revealImg" src="foto-secreta.jpg" alt="foto surpresa" style="max-width:100%;border-radius:12px;border:2px solid #ffe08a" />
+      <p class="muted">(Se não funcionar o shake, toque em <button id="forceReveal" style="background:#43b581">Revelar agora</button>)</p>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const $ = (q) => document.querySelector(q);
+    const $$ = (q) => Array.from(document.querySelectorAll(q));
+    function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+    function load(key, fallback){ try{ return JSON.parse(localStorage.getItem(key)) ?? fallback; }catch{ return fallback; } }
+    function daysSince(dateStr){ if(!dateStr) return 0; const d0 = new Date(dateStr); const now = new Date(); const ms = now - d0; return Math.max(0, Math.floor(ms/86400000)); }
+    function toast(msg){ const t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
+
+    const confetti = (function(){
+      const cvs = $('#confetti');
+      const ctx = cvs?.getContext ? cvs.getContext('2d') : null;
+      let W,H, parts=[]; let playing=false; let t;
+      function resize(){ if(!cvs||!ctx) return; W = cvs.width = innerWidth; H = cvs.height = innerHeight; }
+      function spawn(n=150){ parts = Array.from({length:n}, _=>({x:Math.random()*W,y:-20-Math.random()*H,vx:(Math.random()-.5)*2,vy:2+Math.random()*3,s:4+Math.random()*4,rot:Math.random()*Math.PI})); }
+      function step(){ if(!ctx) return; ctx.clearRect(0,0,W,H); parts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy*=1.001; p.rot+=.05; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle = `hsl(${(p.x+p.y)%360},90%,55%)`; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s); ctx.restore(); }); parts = parts.filter(p=>p.y<H+40); if(playing){ t=requestAnimationFrame(step); } }
+      function start(){ if(!ctx) return; resize(); spawn(); if(!playing){ playing=true; step(); setTimeout(stop, 3000); } }
+      function stop(){ if(!ctx) return; playing=false; cancelAnimationFrame(t); ctx.clearRect(0,0,W,H); }
+      addEventListener('resize', resize); resize();
+      return { start };
+    })();
+
+    // Estrela dourada premium
+    function celebrateStar(){
+      const layer=document.createElement('div');
+      layer.className='star-layer';
+      const s=document.createElement('div');
+      s.className='star';
+      s.textContent='⭐';
+      layer.appendChild(s);
+      document.body.appendChild(layer);
+      setTimeout(()=>layer.remove(),1600);
+    }
+
+    const musicBtn = $('#musicBtn'); const bgm = $('#bgm'); let playing=false;
+    if(musicBtn){ musicBtn.addEventListener('click', async()=>{
+      try{
+        if(!playing){ await bgm.play(); musicBtn.textContent='⏸️ Pausar música'; playing=true; }
+        else { bgm.pause(); musicBtn.textContent='▶️ Nossa música'; playing=false; }
+      }catch(e){ toast('Não consegui tocar automaticamente. Verifique o arquivo musica.mp3'); }
+    }); }
+
+    function playPlim(){
+      try{ const Ctx=(window.AudioContext||window.webkitAudioContext); if(!Ctx) return; const ctx=new Ctx(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='sine'; o.frequency.setValueAtTime(880, ctx.currentTime); g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.02); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.25); o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.26); }catch{}
+    }
+
+    function vibrate(pattern){ try{ if('vibrate' in navigator) navigator.vibrate(pattern); }catch{} }
+
+    const btnNo = $('#btnNo');
+    if(btnNo){ btnNo.addEventListener('mouseenter', ()=>{
+      const parent = btnNo.parentElement; const maxX = parent.clientWidth- btnNo.offsetWidth; const maxY = 40;
+      btnNo.style.position='relative'; btnNo.style.left = Math.floor(Math.random()*maxX- maxX/2)+ 'px'; btnNo.style.top = Math.floor(Math.random()*maxY- maxY/2)+ 'px';
+    }); }
+    const btnYes = $('#btnYes');
+    if(btnYes){ btnYes.addEventListener('click', ()=>{ const r=$('#askResult'); if(r) r.textContent='Eu sabia! Te amo mais! 💗'; confetti.start(); vibrate([40]); }); }
+    if(btnNo){ btnNo.addEventListener('click', ()=>{ const r=$('#askResult'); if(r) r.textContent='Hahaha, o botão "Não" não funciona hoje! 😜'; }); }
+
+    const QUIZ_DATA = [
+      { q:'Onde foi nossa primeira viagem?', a:['🇦🇷 Buenos Aires','🏝️ Japaratinga','🏖️ Thermas'], ok:2 },
+      { q:'Qual o nome da nossa primeira filha?', a:['👧 Luiza','👧 Sofia','👧 Lorena'], ok:1 },
+      { q:'Qual foi o primeiro presente que me deu?', a:['👕 Camisa High','🍫 Bombom Kopenhagen','📦 Caixinha com Bilhetes'], ok:1 },
+      { q:'Qual é a nossa comida preferida do date?', a:['🍕 Pizza','🍣 Sushi','🍔 Hambúrguer'], ok:2 },
+      { q:'Onde foi nosso primeiro encontro?', a:['No cinema','No parque','Na lanchonete'], ok:0 },
+      { q:'Quem manda no relacionamento?', a:['Eu','Você','Os dois 😎'], ok:0 },
+    ];
+    let qIndex=0, score=0;
+    function renderQuiz(){
+      const q = QUIZ_DATA[qIndex];
+      const quizQ=$('#quizQ'); const ops=$('#quizOps'); const quizMsg=$('#quizMsg'); const bar=$('#quizBar'); const revBtn=$('#revealBtn');
+      if(quizQ) quizQ.textContent = q ? q.q : `Acabou! Pontuação: ${score}/${QUIZ_DATA.length} 💞`;
+      if(ops){ ops.innerHTML=''; if(q){ q.a.forEach((txt,i)=>{ const b=document.createElement('button'); b.textContent=txt; b.addEventListener('click',()=>choose(i)); ops.appendChild(b); }); if(quizMsg) quizMsg.textContent=''; } }
+      const pct = Math.min(100, (qIndex / QUIZ_DATA.length)*100); if(bar) bar.style.width = pct+'%';
+      if(qIndex===QUIZ_DATA.length && revBtn){ revBtn.classList.remove('hidden'); }
+    }
+    function choose(i){
+      const q = QUIZ_DATA[qIndex]; const quizMsg=$('#quizMsg'); const bar=$('#quizBar');
+      if(i===q.ok){ if(quizMsg) quizMsg.textContent = 'Acertoooou! 🥳'; playPlim(); }
+      else { if(quizMsg) quizMsg.textContent = 'Quase! Mas eu te amo mesmo assim. 💗'; vibrate([80,30,80]); }
+      if(i===q.ok) score++;
+      qIndex++;
+      if(qIndex<=QUIZ_DATA.length) setTimeout(renderQuiz, 600);
+      if(qIndex===QUIZ_DATA.length){ setTimeout(()=>{ if(bar) bar.style.width='100%'; confetti.start(); celebrateStar(); }, 650); }
+    }
+
+    const EMOJIS = ['💖','🌹','🍫','🎶','🐻','✨','🍓','🌙'];
+    let memFirst=null, lock=false, moves=0, matched=0;
+    function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+    function setupMemory(){
+      const grid=$('#memGrid'); if(!grid) return; grid.innerHTML=''; memFirst=null; lock=false; moves=0; matched=0; const mv=$('#memMoves'); if(mv) mv.textContent='Movimentos: 0';
+      const tiles = shuffle([...EMOJIS, ...EMOJIS]).map((emo)=>{
+        const d=document.createElement('button'); d.className='tile'; d.setAttribute('aria-label','carta'); d.dataset.emo=emo; d.textContent='❔'; d.addEventListener('click',()=>flip(d)); return d;
+      }); tiles.forEach(t=>grid.appendChild(t));
+    }
+    function flip(tile){ if(lock || tile.classList.contains('revealed')) return; tile.classList.add('revealed'); tile.textContent=tile.dataset.emo; if(!memFirst){ memFirst=tile; return; }
+      moves++; const mv=$('#memMoves'); if(mv) mv.textContent='Movimentos: '+moves; lock=true;
+      if(tile.dataset.emo===memFirst.dataset.emo){ matched+=2; lock=false; memFirst=null; if(matched===EMOJIS.length*2){ confetti.start(); celebrateStar(); } return; }
+      setTimeout(()=>{ tile.classList.remove('revealed'); tile.textContent='❔'; memFirst.classList.remove('revealed'); memFirst.textContent='❔'; memFirst=null; lock=false; }, 650);
+    }
+    const memReset=$('#memReset'); if(memReset) memReset.addEventListener('click', setupMemory);
+
+    const btnCopy=$('#btnCopy'); if(btnCopy){ btnCopy.addEventListener('click', async()=>{
+      try{ await navigator.clipboard.writeText($('#letter').value); const cm=$('#copyMsg'); if(cm) cm.textContent='Cartinha copiada! Cole no Whats ou imprima. 📝'; }
+      catch{ const cm=$('#copyMsg'); if(cm) cm.textContent='Não consegui copiar automaticamente :('; }
+    }); }
+    const btnCeleb=$('#btnCelebrate'); if(btnCeleb){ btnCeleb.addEventListener('click', ()=> confetti.start()); }
+    const btnFS=$('#btnFullscreen'); if(btnFS){ btnFS.addEventListener('click', ()=>{ const lf=$('#letterFull'); if(lf) lf.textContent = $('#letter').value; const ml=$('#modalLetter'); if(ml) ml.classList.add('open'); }); }
+    const closeLetter=$('#closeLetter'); if(closeLetter){ closeLetter.addEventListener('click', ()=> $('#modalLetter').classList.remove('open')); }
+
+    function applyState(){
+      let me = load('youName','Matheus Amoroso');
+      let she = load('herName','Sarah Roberto');
+      // migração: se ainda estiver com os padrões antigos, fixa para os novos nomes
+      if(me === 'Você'){ me = 'Matheus Amoroso'; save('youName', me); }
+      if(she === 'Ela'){ she = 'Sarah Roberto'; save('herName', she); }
+      const date = '2023-12-21'; // data fixa de início do relacionamento
+      const yn=$('#yourName'); const hn=$('#herName'); const fn=$('#footerNames'); const dd=$('#daysTogether');
+      if(yn) yn.textContent = me; if(hn) hn.textContent = she; if(fn) fn.textContent = `por ${me} para ${she}`;
+      const d = daysSince(date); if(dd) dd.textContent = d+ (d===1? ' dia juntos' : ' dias juntos');
+      const inDate=$('#inDate'); const inYou=$('#inYou'); const inHer=$('#inHer');
+      if(date && inDate) inDate.value = date; if(inYou) inYou.value = me; if(inHer) inHer.value = she;
+      const ct = load('countTitle','nosso dia'); const cd = load('countDate',null); const ctEl=$('#countTitle'); if(ctEl) ctEl.textContent = ct; updateCountdown();
+    }
+    const btnSave=$('#btnSave'); if(btnSave){ btnSave.addEventListener('click', ()=>{ const me=$('#inYou')?.value || 'Você'; const she=$('#inHer')?.value || 'Ela'; const dt=$('#inDate')?.value || null; save('youName', me); save('herName', she); if(dt) save('startDate', dt); applyState(); confetti.start(); }); }
+    const btnClear=$('#btnClear'); if(btnClear){ btnClear.addEventListener('click', ()=>{ localStorage.clear(); applyState(); }); }
+
+    const gateBtn = $('#gateStart'); const intro = $('#intro');
+    if(gateBtn && intro){ gateBtn.addEventListener('click', ()=>{ document.body.classList.add('started'); intro.classList.add('fade-out'); setTimeout(()=>{ intro.remove(); }, 600); confetti.start(); }); }
+
+    // Desbloqueio por "Começar!" (após entrar)
+    const startBtn = document.getElementById('btnStart');
+    if(startBtn){
+      startBtn.addEventListener('click', ()=>{
+        ['card-quiz','card-mem','card-wordsearch','card-ask','card-letter'].forEach(id=>{
+          const el=document.getElementById(id);
+          if(el) el.classList.remove('locked');
+        });
+        const mb=document.getElementById('musicBtn'); if(mb) mb.classList.remove('hidden');
+        toast('Tudo desbloqueado! 🧡 Divirta-se!');
+        confetti.start();
+      });
+    }
+
+    let shakeEnabled=false, lastShake=0;
+    function handleMotion(e){ if(!shakeEnabled) return; const a=e.accelerationIncludingGravity||{}; const m=Math.abs(a.x||0)+Math.abs(a.y||0)+Math.abs(a.z||0); const now=Date.now(); if(m>35 && now-lastShake>800){ lastShake=now; showReveal(); } }
+    async function enableShake(){
+      try{
+        if(typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function'){
+          const perm = await DeviceMotionEvent.requestPermission();
+          if(perm !== 'granted'){ toast('Permita acesso ao movimento para usar o shake.'); return; }
+        }
+        shakeEnabled=true;
+        if(typeof window !== 'undefined' && 'addEventListener' in window){
+          window.addEventListener('devicemotion', handleMotion);
+        }
+        toast('Agite o celular para revelar a surpresa!');
+      }catch(e){ toast('Seu aparelho pode não suportar o shake. Toque em "Revelar agora".'); }
+    }
+    function showReveal(){ const mr=$('#modalReveal'); if(mr) mr.classList.add('open'); const cg=$('#card-gallery'); if(cg) cg.classList.remove('hidden'); confetti.start(); vibrate([120,50,120]); }
+    const revealBtn=$('#revealBtn'); if(revealBtn){ revealBtn.addEventListener('click', enableShake); }
+    const closeReveal=$('#closeReveal'); if(closeReveal){ closeReveal.addEventListener('click', ()=> $('#modalReveal').classList.remove('open')); }
+    const forceReveal=$('#forceReveal'); if(forceReveal){ forceReveal.addEventListener('click', showReveal); }
+
+    const WORDS=['AMOR','BEIJO','ABRACO','VIDA','SAUDADE','FEDORENTA','DANADA','TELOVE'];
+    const GRID=[
+      ['A','M','O','R','X','Y','L','T','V','D'],
+      ['B','E','Q','A','O','Z','L','U','I','A'],
+      ['G','A','Y','K','K','K','P','Q','D','N'],
+      ['Q','S','A','U','D','A','D','E','A','A'],
+      ['F','E','D','O','R','E','N','T','A','D'],
+      ['L','I','N','D','A','S','C','U','T','A'],
+      ['A','B','R','A','C','O','A','M','O','S'],
+      ['C','A','F','E','T','E','L','O','V','E'],
+      ['B','E','I','J','O','D','E','I','R','O'],
+      ['V','S','R','S','X','A','D','A','X','W']
+    ];
+    let wsSel=[]; let wsFound=new Set();
+    function drawWS(){ const g=$('#wsGrid'); if(!g) return; g.innerHTML=''; GRID.forEach((row,r)=> row.forEach((ch,c)=>{ const d=document.createElement('div'); d.className='cell'; d.textContent=ch; d.dataset.r=r; d.dataset.c=c; g.appendChild(d);})); const w=$('#wsWords'); if(!w) return; w.innerHTML=''; WORDS.forEach(wd=>{ const s=document.createElement('span'); s.id='w-'+wd; s.textContent=wd; w.appendChild(s); }); }
+    function cellAt(r,c){ return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`); }
+    function clearSel(){ wsSel.forEach(([r,c])=> cellAt(r,c)?.classList.remove('sel')); wsSel=[]; }
+    function markSel(){ wsSel.forEach(([r,c])=> cellAt(r,c)?.classList.add('sel')); }
+    function checkSel(){ if(wsSel.length<2) return; const letters = wsSel.map(([r,c])=> GRID[r][c]).join(''); const rev = letters.split('').reverse().join(''); const hit = WORDS.find(w=> w===letters || w===rev); if(hit){ wsSel.forEach(([r,c])=> cellAt(r,c)?.classList.add('found')); wsFound.add(hit); const tag=document.getElementById('w-'+hit); if(tag) tag.style.textDecoration='line-through'; confetti.start(); if(wsFound.size===WORDS.length){ vibrate([100,40,100,40,120]); celebrateStar(); } } }
+    function startWS(){ drawWS(); const g=$('#wsGrid'); if(!g) return; let start=null; let dragging=false;
+      function posFromClient(x,y){ const el=document.elementFromPoint(x,y); const cell=el?.closest?.('.cell'); if(!cell) return null; return [+cell.dataset.r, +cell.dataset.c]; }
+      function isLine(a,b){ return a && b && (a[0]===b[0] || a[1]===b[1]); }
+      function between(a,b){ const res=[]; if(a[0]===b[0]){ const r=a[0]; const c0=Math.min(a[1],b[1]), c1=Math.max(a[1],b[1]); for(let c=c0;c<=c1;c++) res.push([r,c]); } else if(a[1]===b[1]){ const c=a[1]; const r0=Math.min(a[0],b[0]), r1=Math.max(a[0],b[0]); for(let r=r0;r<=r1;r++) res.push([r,c]); } return res; }
+      function downXY(x,y){ dragging=true; const pos=posFromClient(x,y); clearSel(); if(pos){ start=pos; wsSel=[start]; markSel(); } }
+      function moveXY(x,y){ if(!dragging||!start) return; const cur=posFromClient(x,y); if(!cur || !isLine(start,cur)) return; clearSel(); wsSel=between(start,cur); markSel(); }
+      function upDone(){ if(!dragging) return; dragging=false; checkSel(); clearSel(); start=null; }
+
+      if(window.PointerEvent){
+        g.addEventListener('pointerdown', (e)=>{ if(e.pointerType==='mouse' && e.button!==0) return; e.preventDefault(); downXY(e.clientX,e.clientY); }, {passive:false});
+        g.addEventListener('pointermove', (e)=>{ e.preventDefault(); moveXY(e.clientX,e.clientY); }, {passive:false});
+        g.addEventListener('pointerup', upDone);
+        g.addEventListener('pointercancel', upDone);
+        g.addEventListener('pointerleave', upDone);
+      } else {
+        g.addEventListener('touchstart', (e)=>{ e.preventDefault(); const t=e.touches[0]||e.changedTouches[0]; downXY(t.clientX,t.clientY); }, {passive:false});
+        g.addEventListener('touchmove', (e)=>{ e.preventDefault(); const t=e.touches[0]||e.changedTouches[0]; moveXY(t.clientX,t.clientY); }, {passive:false});
+        g.addEventListener('touchend', (e)=>{ e.preventDefault(); upDone(); }, {passive:false});
+        g.addEventListener('touchcancel', (e)=>{ e.preventDefault(); upDone(); }, {passive:false});
+        g.addEventListener('mousedown', (e)=>{ e.preventDefault(); downXY(e.clientX,e.clientY); }, {passive:false});
+        g.addEventListener('mousemove', (e)=>{ e.preventDefault(); moveXY(e.clientX,e.clientY); }, {passive:false});
+        g.addEventListener('mouseup', (e)=>{ e.preventDefault(); upDone(); }, {passive:false});
+      }
+    }
+
+    function updateCountdown(){ const dateStr = load('countDate', null); const el=$('#countDown'); if(!el){ return; } if(!dateStr){ el.textContent='Defina a data especial nas Configurações rápidas (countDate).'; return; } const t=new Date(dateStr).getTime(); const now=Date.now(); const diff=t-now; if(diff<=0){ el.textContent='Chegou o grande dia! 🎉'; return; } const d=Math.floor(diff/86400000); const h=Math.floor((diff%86400000)/3600000); const m=Math.floor((diff%3600000)/60000); const s=Math.floor((diff%60000)/1000); el.textContent=`${d}d ${h}h ${m}m ${s}s`; requestAnimationFrame(updateCountdown); }
+
+    try{ renderQuiz(); setupMemory(); applyState(); startWS(); updateCountdown(); }
+    catch(e){ toast('Ops, algo deu errado ao iniciar.'); }
+  // Lógica: botão "Não" com até 3 cliques e explosão no 3º
+    (function(){
+      const card = document.getElementById('card-ask');
+      let btnNo = document.getElementById('btnNo');
+      const btnYes = document.getElementById('btnYes');
+      if(btnNo){
+        const fresh = btnNo.cloneNode(true); // remove listeners antigos
+        btnNo.parentNode.replaceChild(fresh, btnNo);
+        btnNo = fresh;
+        let clicks = 0;
+        function moveInside(){
+          if(!card || !btnNo || !btnYes) return;
+
+          const pad = 12;       // margem interna do card
+          const margin = 6;     // folga em relação ao botão "Sim"
+
+          const cardRect = card.getBoundingClientRect();
+          const yesRect  = btnYes.getBoundingClientRect();
+          const noW = btnNo.offsetWidth;
+          const noH = btnNo.offsetHeight;
+
+          // altura aleatória válida dentro do card (sem sair do branco)
+          let top = pad + Math.random() * Math.max(0, card.clientHeight - noH - pad*2);
+
+          // áreas laterais (somente LADOS do botão "Sim")
+          const yesLeftRel  = Math.max(0, yesRect.left  - cardRect.left);
+          const yesRightRel = Math.max(0, yesRect.right - cardRect.left);
+
+          // faixa da esquerda: [pad, Lmax]
+          const leftMax   = Math.max(pad, yesLeftRel - margin - noW);
+          const leftWidth = Math.max(0, leftMax - pad);
+
+          // faixa da direita: [Rmin, Rmax]
+          const rightMin   = Math.min(card.clientWidth - pad - noW, yesRightRel + margin);
+          const rightMax   = card.clientWidth - pad - noW;
+          const rightWidth = Math.max(0, rightMax - rightMin);
+
+          let left;
+          if(leftWidth <= 0 && rightWidth <= 0){
+            // fallback: tenta posições aleatórias sem sobrepor o "Sim"
+            let tries = 0; let ok = false;
+            while(tries++ < 20){
+              const maxLeft = Math.max(0, card.clientWidth - noW - pad*2);
+              const maxTop  = Math.max(0, card.clientHeight - noH - pad*2);
+              left = pad + Math.random()*maxLeft;
+              top  = pad + Math.random()*maxTop;
+              const noRect = {left: cardRect.left + left, right: cardRect.left + left + noW, top: cardRect.top + top, bottom: cardRect.top + top + noH};
+              const overlap = !(noRect.right < yesRect.left || noRect.left > yesRect.right || noRect.bottom < yesRect.top || noRect.top > yesRect.bottom);
+              if(!overlap){ ok=true; break; }
+            }
+            if(!ok){ left = pad; } // posição garantida dentro do card
+          } else if(leftWidth > 0 && rightWidth > 0){
+            // escolhe proporcional ao espaço disponível
+            const total = leftWidth + rightWidth;
+            const r = Math.random()*total;
+            if(r < leftWidth){ left = pad + Math.random()*leftWidth; }
+            else { left = rightMin + Math.random()*rightWidth; }
+          } else if(leftWidth > 0){
+            left = pad + Math.random()*leftWidth;
+          } else {
+            left = rightMin + Math.random()*rightWidth;
+          }
+
+          btnNo.style.position='absolute';
+          btnNo.style.left = left + 'px';
+          btnNo.style.top  = top  + 'px';
+        }
+        btnNo.addEventListener('click', (e)=>{
+          e.preventDefault();
+          clicks++;
+          if(clicks < 3){
+            moveInside();
+          } else {
+            btnNo.classList.add('explode');
+            setTimeout(()=>{ btnNo.remove(); }, 620);
+            toast('Agora só resta dizer SIM 😜');
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
